@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Transcripts — TranscriptEase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>body{font-family:'Inter',sans-serif}</style>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i data-feather="book-open" class="text-indigo-600 h-8 w-8"></i>
+                        <a href="index.html" class="ml-2 text-xl font-bold text-gray-900">TranscriptEase</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="py-12">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white shadow rounded-lg p-8">
+                <h1 class="text-2xl font-extrabold text-gray-900">Order Transcripts</h1>
+                <p class="mt-2 text-gray-600">Please enter your school email, student ID, and choose the university you'd like transcripts from.</p>
+
+                <form id="orderForm" class="mt-6 space-y-6" novalidate>
+                    <div>
+                        <label for="schoolEmail" class="block text-sm font-medium text-gray-700">School Email</label>
+                        <input id="schoolEmail" name="schoolEmail" type="email" required placeholder="you@university.edu" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                        <p id="emailError" class="mt-1 text-sm text-red-600 hidden">Please enter a valid school email.</p>
+                    </div>
+
+                    <div>
+                        <label for="studentId" class="block text-sm font-medium text-gray-700">Student ID</label>
+                        <input id="studentId" name="studentId" type="text" required minlength="4" placeholder="e.g., 12345678" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                        <p id="idError" class="mt-1 text-sm text-red-600 hidden">Please enter your student ID (at least 4 characters).</p>
+                    </div>
+
+                    <div>
+                        <label for="university" class="block text-sm font-medium text-gray-700">University</label>
+                        <select id="university" name="university" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Choose a university</option>
+                            <option value="UNT">University of North Texas (UNT)</option>
+                            <option value="UTD">University of Texas at Dallas (UTD)</option>
+                            <option value="TWU">Texas Woman's University (TWU)</option>
+                            <option value="TCU">Texas Christian University (TCU)</option>
+                            <option value="Other">Other / Not Listed</option>
+                        </select>
+                        <p id="schoolError" class="mt-1 text-sm text-red-600 hidden">Please select a university.</p>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Submit Order</button>
+                        <a href="index.html" class="text-sm text-indigo-600 hover:underline">Back to Home</a>
+                    </div>
+                </form>
+
+                <div id="confirmation" class="mt-6 p-4 border border-green-200 bg-green-50 rounded-md hidden" aria-hidden="true">
+                    <h3 class="text-sm font-semibold text-green-800">Order received</h3>
+                    <output id="confText" class="text-sm text-green-700 mt-1" aria-live="polite"></output>
+                    <div class="mt-3">
+                        <a id="backHome" href="index.html" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="assets/js/order.js"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>
