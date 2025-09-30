@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Website</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="#">MySite</a>
+      <button id="navToggle" class="nav-toggle" aria-expanded="false">☰</button>
+      <nav id="siteNav" class="site-nav">
+        <ul>
+          <li><a href="#">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>Welcome to My Website</h1>
+        <p>Starter HTML project — responsive layout, styles and a small JS helper.</p>
+        <a class="cta" href="#projects">See projects</a>
+      </div>
+    </section>
+
+    <section id="projects" class="container cards">
+      <article class="card">
+        <h3>Project One</h3>
+        <p>Short description of project one.</p>
+      </article>
+      <article class="card">
+        <h3>Project Two</h3>
+        <p>Short description of project two.</p>
+      </article>
+      <article class="card">
+        <h3>Project Three</h3>
+        <p>Short description of project three.</p>
+      </article>
+    </section>
+
+    <section id="about" class="container">
+      <h2>About</h2>
+      <p>This is a simple starter template you can expand.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© <span id="year"></span> MySite — Built with a starter template.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

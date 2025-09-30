@@ -1,0 +1,31 @@
+/* Basic starter styles */
+:root{
+  --bg:#f7f7fb;
+  --card:#ffffff;
+  --accent:#0b76ef;
+  --text:#222;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Segoe UI, Roboto, Arial, sans-serif;background:var(--bg);color:var(--text);line-height:1.4}
+.container{max-width:1000px;margin:0 auto;padding:1rem}
+.site-header{background:#fff;border-bottom:1px solid #e6e6e6}
+.site-header .container{display:flex;align-items:center;justify-content:space-between}
+.brand{font-weight:700;color:var(--accent);text-decoration:none}
+.site-nav ul{list-style:none;margin:0;padding:0;display:flex;gap:1rem}
+.site-nav a{text-decoration:none;color:inherit}
+.nav-toggle{display:none;background:transparent;border:0;font-size:1.4rem}
+.hero{padding:4rem 0;text-align:center}
+.hero h1{margin:0 0 .5rem;font-size:2rem}
+.cta{display:inline-block;margin-top:1rem;padding:.6rem 1rem;background:var(--accent);color:#fff;border-radius:6px;text-decoration:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:2rem 0}
+.card{background:var(--card);padding:1rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.site-footer{padding:1rem 0;text-align:center;color:#666}
+
+@media(max-width:700px){
+  .site-nav{display:none}
+  .nav-toggle{display:block}
+  .site-nav[aria-expanded="true"]{display:block}
+  .site-nav ul{flex-direction:column}
+  .site-header .container{gap:.5rem}
+}
