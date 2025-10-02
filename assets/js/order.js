@@ -47,22 +47,29 @@ document.addEventListener('DOMContentLoaded', function () {
     var ok = validateEmailField() & validateIdField() & validateSchoolField();
     if (!ok) return;
 
-    // Simulate sending the order (no backend in starter template)
     var payload = {
       email: email.value.trim(),
       studentId: studentId.value.trim(),
       university: university.value
     };
 
-    // Save to localStorage as a simple mock of sending
-    try { localStorage.setItem('lastTranscriptOrder', JSON.stringify(payload)); } catch (err) { }
-
-  // Show confirmation (update output and make visible to assistive tech)
-  confText.value = 'We received your request for ' + payload.university + '. A confirmation was sent to ' + payload.email + ' (mock).';
-  confirmation.classList.remove('hidden');
-  confirmation.setAttribute('aria-hidden', 'false');
-
-    // Optionally clear the form or disable inputs
-    form.querySelectorAll('input, select, button').forEach(function (el) { el.disabled = true; });
+    // POST to server to send verification code via SMTP
+    var API_BASE = window.API_BASE || '';
+    fetch(API_BASE + '/api/send-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      if (!data || !data.ok) {
+        alert('Failed to send verification code. Please try again.');
+        console.error('send-code failed', data);
+        return;
+      }
+      // Save orderId so verify page can look it up
+      try { localStorage.setItem('pendingOrderId', data.orderId); } catch (err) { }
+      // optionally save masked email for UX
+      try { localStorage.setItem('pendingMaskedEmail', data.maskedEmail || ''); } catch (err) { }
+      window.location.href = 'verify.html';
+    }).catch(function (err) { console.error(err); alert('Network error sending code'); });
   });
 });

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Verify Email — TranscriptEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'Inter',sans-serif}</style>
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 flex items-center">
+            <i data-feather="book-open" class="text-indigo-600 h-8 w-8"></i>
+            <a href="index.html" class="ml-2 text-xl font-bold text-gray-900">TranscriptEase</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="py-12">
+    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="bg-white shadow rounded-lg p-8">
+        <h1 class="text-2xl font-extrabold text-gray-900">Verify Your Email</h1>
+        <p id="desc" class="mt-2 text-gray-600">Enter the 6-digit code we sent to your email.</p>
+
+        <div id="noPending" class="hidden">
+          <p class="text-sm text-red-600">No pending order found. Please start your order first.</p>
+          <div class="mt-4"><a href="order.html" class="text-indigo-600 hover:underline">Go to Order Page</a></div>
+        </div>
+
+        <div id="verifyArea" class="mt-6">
+          <p class="text-sm text-gray-700">Code sent to: <strong id="maskedEmail">•••</strong></p>
+
+          <form id="verifyForm" class="mt-4 space-y-4" novalidate>
+            <div>
+              <label for="codeInput" class="block text-sm font-medium text-gray-700">Verification Code</label>
+              <input id="codeInput" name="code" type="text" inputmode="numeric" maxlength="6" required placeholder="123456" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+              <p id="codeError" class="mt-1 text-sm text-red-600 hidden">Invalid code. Please try again.</p>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Verify</button>
+              <button id="resendBtn" type="button" class="text-sm text-indigo-600 hover:underline">Resend Code</button>
+            </div>
+          </form>
+
+          <div id="info" class="mt-4 text-sm text-gray-600"></div>
+
+          <div id="success" class="mt-6 p-4 border border-green-200 bg-green-50 rounded-md hidden" aria-hidden="true">
+            <h3 class="text-sm font-semibold text-green-800">Email verified</h3>
+            <output id="successText" class="text-sm text-green-700 mt-1" aria-live="polite"></output>
+            <div class="mt-3">
+              <a href="index.html" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Back to Home</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="assets/js/verify.js"></script>
+  <script>feather.replace();</script>
+</body>
+</html>
