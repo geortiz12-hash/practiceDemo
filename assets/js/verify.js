@@ -1,101 +1,146 @@
-document.addEventListener('DOMContentLoaded', function () {
-  var orderId = null;
-  try { orderId = localStorage.getItem('pendingOrderId'); } catch (err) { console.warn(err); }
-  if (!orderId) {
-    document.getElementById('noPending').classList.remove('hidden');
-    document.getElementById('verifyArea').classList.add('hidden');
-    return;
+/* TranscriptEase - Verify page wiring */
+(function () {
+  // Ensure API_BASE exists (config.js is optional; fallback here)
+  if (!window.API_BASE) {
+    const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || location.origin === "null" || location.protocol === "file:";
+    window.API_BASE = isLocal ? "http://localhost:3000" : "https://REPLACE_WITH_YOUR_SERVER_URL";
   }
 
-  var maskedEmailEl = document.getElementById('maskedEmail');
-  var codeInput = document.getElementById('codeInput');
-  var codeError = document.getElementById('codeError');
-  var info = document.getElementById('info');
-  var success = document.getElementById('success');
-  var successText = document.getElementById('successText');
+  const noPending = document.getElementById("noPending");
+  const verifyArea = document.getElementById("verifyArea");
+  const maskedEmailEl = document.getElementById("maskedEmail");
+  const info = document.getElementById("info");
 
-  function maskEmail(email) {
-    var parts = email.split('@');
-    if (parts.length !== 2) return email;
-    var local = parts[0];
-    var domain = parts[1];
-    if (local.length <= 2) local = local[0] + '*';
-    else local = local[0] + Array(Math.max(0, local.length - 2)).fill('*').join('') + local.slice(-1);
-    return local + '@' + domain;
+  const form = document.getElementById("verifyForm");
+  const codeInput = document.getElementById("codeInput");
+  const codeError = document.getElementById("codeError");
+
+  const success = document.getElementById("success");
+  const successText = document.getElementById("successText");
+  const resendBtn = document.getElementById("resendBtn");
+
+  function show(el) { el.classList.remove("hidden"); el.setAttribute("aria-hidden", "false"); }
+  function hide(el) { el.classList.add("hidden"); el.setAttribute("aria-hidden", "true"); }
+
+  function getOrderId() {
+    return sessionStorage.getItem("te.orderId");
+  }
+  function getMaskedEmail() {
+    return sessionStorage.getItem("te.maskedEmail") || "•••";
   }
 
-  var pendingData = null;
-  var API_BASE = window.API_BASE || '';
+  async function getJSON(url) {
+    const res = await fetch(url, { method: "GET", credentials: "omit" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data?.error || data?.message || res.statusText || "Request failed";
+      throw new Error(msg);
+    }
+    return data;
+  }
 
-  // load pending info from server
-  fetch(API_BASE + '/api/pending/' + encodeURIComponent(orderId)).then(function (r) { return r.json(); }).then(function (data) {
-    if (!data || !data.ok) {
-      document.getElementById('noPending').classList.remove('hidden');
-      document.getElementById('verifyArea').classList.add('hidden');
+  async function postJSON(url, body) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      credentials: "omit",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data?.error || data?.message || res.statusText || "Request failed";
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  async function loadPending(orderId) {
+    try {
+      const data = await getJSON(`${window.API_BASE}/api/pending/${orderId}`);
+      maskedEmailEl.textContent = data.maskedEmail || getMaskedEmail();
+      if (data.expiresAt) {
+        const dt = new Date(data.expiresAt);
+        info.textContent = `This code expires at ${dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`;
+      } else {
+        info.textContent = "";
+      }
+    } catch (err) {
+      // If pending not found, show "no pending"
+      hide(verifyArea);
+      show(noPending);
+    }
+  }
+
+  async function init() {
+    const orderId = getOrderId();
+    if (!orderId) {
+      hide(verifyArea);
+      show(noPending);
       return;
     }
-    pendingData = data;
-    maskedEmailEl.textContent = data.maskedEmail || '';
-    updateInfo();
-    var infoTimer = setInterval(updateInfo, 10000);
+    maskedEmailEl.textContent = getMaskedEmail();
+    await loadPending(orderId);
+  }
 
-    document.getElementById('resendBtn').addEventListener('click', function () {
-      fetch(API_BASE + '/api/resend/' + encodeURIComponent(orderId), { method: 'POST' }).then(function (r) { return r.json(); }).then(function (res) {
-        if (!res || !res.ok) { alert('Failed to resend code'); return; }
-        alert('A new verification code was sent to ' + (res.maskedEmail || 'your email') + ' (mock).');
-        pendingData = res; updateInfo();
-      }).catch(function (err) { console.error(err); alert('Network error while resending'); });
-    });
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hide(codeError);
+    const orderId = getOrderId();
+    if (!orderId) { hide(verifyArea); show(noPending); return; }
 
-    function isExpired() { return Date.now() > (pendingData.expiresAt || 0); }
-    function updateInfo() {
-      if (!pendingData) return;
-      if (isExpired()) info.textContent = 'The code has expired. Click "Resend Code" to get a new one.';
-      else {
-        var mins = Math.ceil(((pendingData.expiresAt || 0) - Date.now()) / 60000);
-        info.textContent = 'The code will expire in ' + mins + ' minute(s).';
-      }
+    const code = codeInput.value.trim();
+    if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+      codeError.textContent = "Invalid code. Please enter the 6 digits in your email.";
+      show(codeError);
+      return;
     }
 
-    // attach submit handler now that pendingData exists
-    document.getElementById('verifyForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      codeError.classList.add('hidden');
-      var entered = (codeInput.value || '').trim();
-      if (!entered || entered.length < 6) { codeError.textContent = 'Please enter the 6-digit code.'; codeError.classList.remove('hidden'); return; }
-      if (isExpired()) { codeError.textContent = 'This code has expired. Please resend.'; codeError.classList.remove('hidden'); return; }
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const original = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Verifying...";
 
-      fetch(API_BASE + '/api/verify-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: orderId, code: entered })
-      }).then(function (r) { return r.json(); }).then(function (resp) {
-        if (!resp || !resp.ok) { codeError.textContent = (resp && resp.error) || 'Verification failed'; codeError.classList.remove('hidden'); return; }
-        successText.value = 'Thank you — your request for ' + (resp.confirmed && resp.confirmed.university || pendingData.university || '') + ' has been confirmed. We will process it shortly.';
-        success.classList.remove('hidden');
-        success.setAttribute('aria-hidden', 'false');
-        document.getElementById('verifyForm').querySelectorAll('input, button').forEach(function (el) { el.disabled = true; });
-      }).catch(function (err) { console.error(err); codeError.textContent = 'Network error verifying code'; codeError.classList.remove('hidden'); });
-    });
-
-  }).catch(function (err) { console.error(err); document.getElementById('noPending').classList.remove('hidden'); document.getElementById('verifyArea').classList.add('hidden'); });
-
-  document.getElementById('verifyForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    codeError.classList.add('hidden');
-    var entered = (codeInput.value || '').trim();
-    if (!entered || entered.length < 6) { codeError.textContent = 'Please enter the 6-digit code.'; codeError.classList.remove('hidden'); return; }
-    if (isExpired()) { codeError.textContent = 'This code has expired. Please resend.'; codeError.classList.remove('hidden'); return; }
-    if (entered !== String(pending.code)) { codeError.textContent = 'Invalid code. Please try again.'; codeError.classList.remove('hidden'); return; }
-
-    // Verified — move pending to lastTranscriptOrder and remove pending
-    var confirmed = Object.assign({}, pending, { verifiedAt: Date.now() });
-    try { localStorage.setItem('lastTranscriptOrder', JSON.stringify(confirmed)); localStorage.removeItem('pendingTranscriptOrder'); } catch (err) { console.warn(err); }
-
-  successText.value = 'Thank you — your request for ' + (confirmed.university || '') + ' has been confirmed. We will process it shortly.';
-  success.classList.remove('hidden');
-  success.setAttribute('aria-hidden', 'false');
-    document.getElementById('verifyForm').querySelectorAll('input, button').forEach(function (el) { el.disabled = true; });
-    clearInterval(infoTimer);
+    try {
+      const data = await postJSON(`${window.API_BASE}/api/verify-code`, { orderId, code });
+      // On success, clear session, show success
+      sessionStorage.removeItem("te.orderId");
+      sessionStorage.removeItem("te.maskedEmail");
+      successText.textContent = data.message || "Your email has been verified and your transcript order is confirmed.";
+      show(success);
+      // Optionally hide form
+      hide(form);
+    } catch (err) {
+      codeError.textContent = err.message || "Invalid code. Please try again.";
+      show(codeError);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = original;
+    }
   });
-});
+
+  resendBtn?.addEventListener("click", async () => {
+    const orderId = getOrderId();
+    if (!orderId) { hide(verifyArea); show(noPending); return; }
+
+    try { resendBtn.disabled = true; } catch (e) {}
+
+    try {
+      const res = await fetch(`${window.API_BASE}/api/resend/${orderId}`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || res.statusText);
+      info.textContent = (data.message || "A new code has been sent.") + (data.expiresAt ? " Code expires soon." : "");
+      // Update masked email if provided
+      if (data.maskedEmail) {
+        maskedEmailEl.textContent = data.maskedEmail;
+        sessionStorage.setItem("te.maskedEmail", data.maskedEmail);
+      }
+    } catch (err) {
+      info.textContent = `Couldn't resend code: ${err.message}`;
+    } finally {
+      try { resendBtn.disabled = false; } catch (e) {}
+    }
+  });
+
+  // Kick off
+  init();
+})();

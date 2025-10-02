@@ -1,75 +1,109 @@
-document.addEventListener('DOMContentLoaded', function () {
-  var form = document.getElementById('orderForm');
-  var email = document.getElementById('schoolEmail');
-  var studentId = document.getElementById('studentId');
-  var university = document.getElementById('university');
-
-  var emailError = document.getElementById('emailError');
-  var idError = document.getElementById('idError');
-  var schoolError = document.getElementById('schoolError');
-
-  var confirmation = document.getElementById('confirmation');
-  var confText = document.getElementById('confText');
-
-  function validateEmailField() {
-    if (!email.checkValidity()) {
-      emailError.classList.remove('hidden');
-      return false;
-    }
-    emailError.classList.add('hidden');
-    return true;
+/* TranscriptEase - Order page wiring */
+(function () {
+  // Ensure API_BASE exists (config.js is optional; fallback here)
+  if (!window.API_BASE) {
+    const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname) || location.origin === "null" || location.protocol === "file:";
+    window.API_BASE = isLocal ? "http://localhost:3000" : "https://REPLACE_WITH_YOUR_SERVER_URL";
   }
 
-  function validateIdField() {
-    if (!studentId.checkValidity()) {
-      idError.classList.remove('hidden');
-      return false;
-    }
-    idError.classList.add('hidden');
-    return true;
+  const form = document.getElementById("orderForm");
+  const emailInput = document.getElementById("schoolEmail");
+  const idInput = document.getElementById("studentId");
+  const schoolSelect = document.getElementById("university");
+
+  const emailError = document.getElementById("emailError");
+  const idError = document.getElementById("idError");
+  const schoolError = document.getElementById("schoolError");
+
+  const confirmation = document.getElementById("confirmation");
+  const confText = document.getElementById("confText");
+
+  function show(el) { el.classList.remove("hidden"); el.setAttribute("aria-hidden", "false"); }
+  function hide(el) { el.classList.add("hidden"); el.setAttribute("aria-hidden", "true"); }
+
+  function validateEmail(value) {
+    // very light check + encourage .edu
+    const basic = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    return basic;
   }
 
-  function validateSchoolField() {
-    if (!university.value) {
-      schoolError.classList.remove('hidden');
-      return false;
-    }
-    schoolError.classList.add('hidden');
-    return true;
+  function maskEmail(email) {
+    const [user, domain] = email.split("@");
+    if (!domain) return "•••@•••";
+    const u = user.length <= 2 ? user[0] + "•" : user[0] + "•".repeat(user.length - 2) + user[user.length - 1];
+    return `${u}@${domain}`;
   }
 
-  email.addEventListener('input', validateEmailField);
-  studentId.addEventListener('input', validateIdField);
-  university.addEventListener('change', validateSchoolField);
+  async function postJSON(url, body) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      credentials: "omit",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data?.error || data?.message || res.statusText || "Request failed";
+      throw new Error(msg);
+    }
+    return data;
+  }
 
-  form.addEventListener('submit', function (e) {
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    var ok = validateEmailField() & validateIdField() & validateSchoolField();
-    if (!ok) return;
 
-    var payload = {
-      email: email.value.trim(),
-      studentId: studentId.value.trim(),
-      university: university.value
-    };
+    // Reset errors
+    hide(emailError); hide(idError); hide(schoolError);
 
-    // POST to server to send verification code via SMTP
-    var API_BASE = window.API_BASE || '';
-    fetch(API_BASE + '/api/send-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(function (r) { return r.json(); }).then(function (data) {
-      if (!data || !data.ok) {
-        alert('Failed to send verification code. Please try again.');
-        console.error('send-code failed', data);
-        return;
-      }
-      // Save orderId so verify page can look it up
-      try { localStorage.setItem('pendingOrderId', data.orderId); } catch (err) { }
-      // optionally save masked email for UX
-      try { localStorage.setItem('pendingMaskedEmail', data.maskedEmail || ''); } catch (err) { }
-      window.location.href = 'verify.html';
-    }).catch(function (err) { console.error(err); alert('Network error sending code'); });
+    const email = emailInput.value.trim();
+    const studentId = idInput.value.trim();
+    const university = schoolSelect.value.trim();
+
+    let valid = true;
+    if (!validateEmail(email) || !email.endsWith(".edu")) {
+      emailError.textContent = "Please enter a valid .edu school email.";
+      show(emailError);
+      valid = false;
+    }
+    if (studentId.length < 4) {
+      idError.textContent = "Please enter your student ID (at least 4 characters).";
+      show(idError);
+      valid = false;
+    }
+    if (!university) {
+      show(schoolError);
+      valid = false;
+    }
+    if (!valid) return;
+
+    // Disable submit button to avoid double submit
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending code...";
+
+    try {
+      const payload = { email, studentId, university };
+      const data = await postJSON(`${window.API_BASE}/api/send-code`, payload);
+      // Persist orderId for verification step
+      sessionStorage.setItem("te.orderId", data.orderId);
+      sessionStorage.setItem("te.maskedEmail", data.maskedEmail || maskEmail(email));
+
+      confText.textContent = `We sent a 6-digit code to ${data.maskedEmail || maskEmail(email)}. You'll be redirected to verification.`;
+      show(confirmation);
+
+      // Redirect to verify page after short delay
+      setTimeout(() => {
+        location.href = "verify.html";
+      }, 1200);
+    } catch (err) {
+      confText.textContent = `Couldn't send code: ${err.message}. Please try again in a minute.`;
+      show(confirmation);
+      confirmation.classList.remove("border-green-200", "bg-green-50");
+      confirmation.classList.add("border-red-200", "bg-red-50");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
   });
-});
+})();
